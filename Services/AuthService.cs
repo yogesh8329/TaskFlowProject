@@ -68,7 +68,7 @@ namespace TaskFlow.Api.Services
             // ❌ USER NOT FOUND
             if (user == null)
             {
-                await LogLoginFailed(dto.Email, "User not found");
+                //await LogLoginFailed(dto.Email, "User not found");
                 throw new UnauthorizedException("Invalid credentials");
             }
 
@@ -78,7 +78,7 @@ namespace TaskFlow.Api.Services
             // ❌ PASSWORD WRONG
             if (result == PasswordVerificationResult.Failed)
             {
-                await LogLoginFailed(dto.Email, "Invalid password");
+                //await LogLoginFailed(dto.Email, "Invalid password");
                 throw new UnauthorizedException("Invalid credentials");
             }
 

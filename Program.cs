@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using System.Reflection;
 using System.Text;
 using System.Threading.RateLimiting;
 using TaskFlow.Api.Data;
@@ -31,7 +32,7 @@ builder.Services.AddHttpContextAccessor();
 
 // ================= DATABASE =================
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
 
@@ -110,6 +111,10 @@ builder.Services.AddSwaggerGen(options =>
         Title = "TaskFlow.Api",
         Version = "v1"
     });
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    options.IncludeXmlComments(xmlPath);
+
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -166,19 +171,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionMiddleware>();
 
-// ================= GLOBAL EXCEPTION HANDLER =================
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        context.Response.StatusCode = 500;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync(
-            "{\"success\":false,\"message\":\"An unexpected error occurred.\"}"
-        );
-    });
-});
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 

@@ -10,9 +10,11 @@ using TaskFlow.Api.Services;
 
 namespace TaskFlow.Api.Controllers
 {
+    /// <summary>
+/// Handles task management operations like create, update, delete and fetch tasks.
+/// </summary>
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]")]
-
     [Authorize]
     public class TaskController : ControllerBase
     {
@@ -33,10 +35,21 @@ namespace TaskFlow.Api.Controllers
             return int.Parse(claim.Value);
         }
 
+        /// <summary>
+        /// Creates a new task for the authenticated user.
+        /// </summary>
+        /// <param name="dto">Task details</param>
+        /// <response code="201">Task created successfully</response>
+        /// <response code="400">Validation error</response>
+        /// <response code="401">Unauthorized</response>
+        /// 
 
+        [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
-        { 
+        {
             var result = await _taskService.CreateTaskAsync(GetUserId(), dto);
 
             return Ok(new ApiResponse<TaskResponseDto>
@@ -46,7 +59,13 @@ namespace TaskFlow.Api.Controllers
                 Data = result
             });
         }
-     
+
+
+        /// <summary>
+        /// Returns tasks of currently authenticated user.
+        /// </summary>
+        /// <response code="200">User tasks returned</response>
+        /// <response code="401">Unauthorized</response>
 
         [HttpGet("my")]
         [Authorize]
@@ -64,7 +83,17 @@ namespace TaskFlow.Api.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin")]
+
+
+        /// <summary>
+        /// Returns paginated list of tasks.
+        /// </summary>
+        /// <param name="query">Pagination and filter parameters</param>
+        /// <response code="200">Tasks returned successfully</response>
+        /// 
+        [ProducesResponseType(typeof(PagedResult<TaskResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    
         [HttpGet("all")]
         public async Task<IActionResult> AllTasks()
         {
@@ -98,10 +127,18 @@ namespace TaskFlow.Api.Controllers
             });
         }
 
+
+
+        /// <summary>
+        /// Updates an existing task by id.
+        /// </summary>
+        /// 
+        [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         [Authorize]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskDto dto)
-        { 
+        {
             var userId = int.Parse(
                 User.FindFirstValue(ClaimTypes.NameIdentifier)!
             );
@@ -117,6 +154,14 @@ namespace TaskFlow.Api.Controllers
         }
 
 
+
+        /// <summary>
+        /// Soft deletes a task by id.
+        /// </summary>
+        /// 
+
+        [ProducesResponseType(typeof(TaskResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
