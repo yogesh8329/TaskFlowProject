@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -66,8 +66,15 @@ builder.Services.AddRateLimiter(options =>
 
 // ================= HEALTH CHECK =================
 builder.Services.AddHealthChecks()
-    .AddSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")!, name: "sql", tags: new[] { "ready" })
-    .AddRedis(builder.Configuration.GetConnectionString("Redis")!, name: "redis", tags: new[] { "ready" });
+    .AddNpgSql(
+        builder.Configuration.GetConnectionString("DefaultConnection")!,
+        name: "postgres",
+        tags: new[] { "ready" });
+    //.AddRedis(
+    //    builder.Configuration.GetConnectionString("Redis")!,
+    //    name: "redis",
+    //    tags: new[] { "ready" });
+
 
 
 // ================= DI =================
@@ -86,7 +93,17 @@ builder.Services.AddControllers()
             new System.Text.Json.Serialization.JsonStringEnumConverter()
         );
     });
-
+// ================= CORS =================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.AllowAnyOrigin()   // Temporary (deployment तक)
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        });
+});
 
 // ================= FLUENT VALIDATION =================
 builder.Services.AddFluentValidationAutoValidation();
@@ -165,14 +182,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ================= BUILD APP =================
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 
 app.UseMiddleware<ExceptionMiddleware>();
-
+app.UseCors("AllowFrontend");
 
 app.UseMiddleware<RequestLoggingMiddleware>();
 
@@ -190,6 +205,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready")
 });
+
 
 app.MapControllers();
 
