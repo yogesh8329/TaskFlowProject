@@ -70,11 +70,15 @@ builder.Services.AddHealthChecks()
         builder.Configuration.GetConnectionString("DefaultConnection")!,
         name: "postgres",
         tags: new[] { "ready" });
-    //.AddRedis(
-    //    builder.Configuration.GetConnectionString("Redis")!,
-    //    name: "redis",
-    //    tags: new[] { "ready" });
+//.AddRedis(
+//    builder.Configuration.GetConnectionString("Redis")!,
+//    name: "redis",
+//    tags: new[] { "ready" });
 
+
+//----------------------**********************
+builder.Services.Configure<EmailSettings>(
+builder.Configuration.GetSection("EmailSettings"));
 
 
 // ================= DI =================
@@ -205,7 +209,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
     Predicate = check => check.Tags.Contains("ready")
 });
-
+app.MapGet("/", () => "TaskFlow API is running...");
 
 app.MapControllers();
 
