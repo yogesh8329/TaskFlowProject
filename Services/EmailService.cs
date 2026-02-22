@@ -9,37 +9,47 @@ namespace TaskFlow.Api.Services
 {
 
     public class EmailService : IEmailService
+    {
+        private readonly EmailSettings _settings;
+
+        public EmailService(IOptions<EmailSettings> settings)
         {
-            private readonly EmailSettings _settings;
+            _settings = settings.Value;
+        }
 
-            public EmailService(IOptions<EmailSettings> settings)
+        public async Task SendResetEmailAsync(string toEmail, string resetLink)
+        {
+            var message = new MailMessage
             {
-                _settings = settings.Value;
-            }
+                From = new MailAddress(_settings.From),
+                Subject = "Reset Your Password",
+                Body = $"Click the link below to reset your password:\n\n{resetLink}",
+                IsBodyHtml = false
+            };
 
-            public async Task SendResetEmailAsync(string toEmail, string resetLink)
-            {
-                var message = new MailMessage
-                {
-                    From = new MailAddress(_settings.From),
-                    Subject = "Reset Your Password",
-                    Body = $"Click the link below to reset your password:\n\n{resetLink}",
-                    IsBodyHtml = false
-                };
-
-                message.To.Add(toEmail);
+            message.To.Add(toEmail);
 
 
             using var client = new SmtpClient(_settings.Host, _settings.Port);
-            
+
             client.UseDefaultCredentials = false;
             client.Credentials = new NetworkCredential(
                 _settings.Username,
                 _settings.Password
             );
+
             client.EnableSsl = true;
 
-            await client.SendMailAsync(message);
-        }
+            try
+            {
+                await client.SendMailAsync(message);
+                Console.WriteLine("EMAIL SENT SUCCESSFULLY");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("EMAIL ERROR: " + ex.ToString());
+                throw; // swallow mat karna
+            }
         }
     }
+}
