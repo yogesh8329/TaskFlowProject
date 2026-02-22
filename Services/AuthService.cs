@@ -154,8 +154,13 @@ namespace TaskFlow.Api.Services
         }
         public async Task<string?> GeneratePasswordResetTokenAsync(string email)
         {
+            if (string.IsNullOrWhiteSpace(email))
+                return null;
+
+            var normalizedEmail = email.Trim().ToLower();
+
             var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == email.Trim().ToLower());
+                .FirstOrDefaultAsync(x => x.Email == normalizedEmail);
 
             if (user == null)
                 return null;
@@ -167,20 +172,14 @@ namespace TaskFlow.Api.Services
 
             await _context.SaveChangesAsync();
 
-            var resetLink = $"http://localhost:4200/auth/reset-password?token={token}";
+            // ⚠ Replace this with your actual frontend domain
+            var resetLink = $"https://taskflowproject-a75e.onrender.com/api/v1/auth/reset-password?token={token}";
 
-            try
-            {
-                await _emailService.SendResetEmailAsync(user.Email, resetLink);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("EMAIL ERROR: " + ex.Message);
-            }
+            // 🚨 DO NOT swallow exception
+            await _emailService.SendResetEmailAsync(user.Email, resetLink);
 
             return token;
         }
-       
         public async Task ResetPasswordAsync(string token, string newPassword)
         {
             if (string.IsNullOrWhiteSpace(token))
@@ -188,16 +187,11 @@ namespace TaskFlow.Api.Services
 
             token = token.Trim();
 
-            Console.WriteLine("Incoming Token: " + token);
-
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.PasswordResetToken == token);
 
             if (user == null)
                 throw new BadRequestException("Invalid token");
-
-            Console.WriteLine("DB Token: " + user.PasswordResetToken);
-            Console.WriteLine("Expiry: " + user.PasswordResetTokenExpiry);
 
             if (user.PasswordResetTokenExpiry == null ||
                 user.PasswordResetTokenExpiry <= DateTime.UtcNow)
@@ -205,8 +199,7 @@ namespace TaskFlow.Api.Services
                 throw new BadRequestException("Token expired");
             }
 
-            user.PasswordHash = _passwordHasher
-                .HashPassword(user, newPassword);
+            user.PasswordHash = _passwordHasher.HashPassword(user, newPassword);
 
             user.PasswordResetToken = null;
             user.PasswordResetTokenExpiry = null;
