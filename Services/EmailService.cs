@@ -29,15 +29,17 @@ namespace TaskFlow.Api.Services
 
                 message.To.Add(toEmail);
 
-                using var client = new SmtpClient(_settings.Host, _settings.Port)
-                {
-                    Credentials = new NetworkCredential(
-                        _settings.Username,
-                        _settings.Password),
-                    EnableSsl = true
-                };
 
-                await client.SendMailAsync(message);
-            }
+            using var client = new SmtpClient(_settings.Host, _settings.Port);
+            
+            client.UseDefaultCredentials = false;
+            client.Credentials = new NetworkCredential(
+                _settings.Username,
+                _settings.Password
+            );
+            client.EnableSsl = true;
+
+            await client.SendMailAsync(message);
+        }
         }
     }
