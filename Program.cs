@@ -76,10 +76,6 @@ builder.Services.AddHealthChecks()
 //    tags: new[] { "ready" });
 
 
-//----------------------**********************
-builder.Services.Configure<EmailSettings>(
-builder.Configuration.GetSection("EmailSettings"));
-
 
 // ================= DI =================
 builder.Services.AddScoped<IAuthService, AuthService>();

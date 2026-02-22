@@ -1,54 +1,62 @@
-﻿
-using global::TaskFlow.Api.Models;
-using Microsoft.Extensions.Options;
-using System.Net;
+﻿using SendGrid;
+using SendGrid.Helpers.Mail;
 using System.Net.Mail;
-
-
+using SendGrid;
+using SendGrid.Helpers.Mail;
 namespace TaskFlow.Api.Services
 {
-
     public class EmailService : IEmailService
     {
-        private readonly EmailSettings _settings;
-
-        public EmailService(IOptions<EmailSettings> settings)
+        public EmailService()
         {
-            _settings = settings.Value;
         }
 
         public async Task SendResetEmailAsync(string toEmail, string resetLink)
         {
-            var message = new MailMessage
-            {
-                From = new MailAddress(_settings.From),
-                Subject = "Reset Your Password",
-                Body = $"Click the link below to reset your password:\n\n{resetLink}",
-                IsBodyHtml = false
-            };
+            var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
 
-            message.To.Add(toEmail);
+            if (string.IsNullOrEmpty(apiKey))
+                throw new Exception("SendGrid API key not configured");
 
+            var client = new SendGridClient(apiKey);
 
-            using var client = new SmtpClient(_settings.Host, _settings.Port);
+            var fromEmail = Environment.GetEnvironmentVariable("SENDGRID_FROM_EMAIL")
+                            ?? "ymrathod1412@gmail.com";
 
-            client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential(
-                _settings.Username,
-                _settings.Password
+            var from = new EmailAddress(fromEmail, "TaskFlow");
+            var to = new EmailAddress(toEmail);
+
+            var subject = "Reset Your Password";
+
+            var plainTextContent = $"Click the link below to reset your password:\n\n{resetLink}";
+
+            var htmlContent = $@"
+                <p>Click the link below to reset your password:</p>
+                <p>
+                    <a href='{resetLink}' 
+                       style='background-color:#2563eb;
+                              color:white;
+                              padding:10px 15px;
+                              text-decoration:none;
+                              border-radius:5px;'>
+                        Reset Password
+                    </a>
+                </p>";
+
+            var msg = MailHelper.CreateSingleEmail(
+                from,
+                to,
+                subject,
+                plainTextContent,
+                htmlContent
             );
 
-            client.EnableSsl = true;
+            var response = await client.SendEmailAsync(msg);
 
-            try
+            if (!response.IsSuccessStatusCode)
             {
-                await client.SendMailAsync(message);
-                Console.WriteLine("EMAIL SENT SUCCESSFULLY");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("EMAIL ERROR: " + ex.ToString());
-                throw; // swallow mat karna
+                var body = await response.Body.ReadAsStringAsync();
+                throw new Exception($"SendGrid failed: {body}");
             }
         }
     }
