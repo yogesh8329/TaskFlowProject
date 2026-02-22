@@ -173,7 +173,7 @@ namespace TaskFlow.Api.Services
             await _context.SaveChangesAsync();
 
             // ⚠ Replace this with your actual frontend domain
-            var resetLink = $"https://taskflowproject-a75e.onrender.com/api/v1/auth/reset-password?token={token}";
+            var resetLink = $"https://task-flow-client-seven.vercel.app/auth/reset-password?token={token}";
 
             // 🚨 DO NOT swallow exception
             await _emailService.SendResetEmailAsync(user.Email, resetLink);
