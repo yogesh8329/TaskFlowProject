@@ -13,7 +13,7 @@ namespace TaskFlow.Api.Services
 
         public async Task SendResetEmailAsync(string toEmail, string resetLink)
         {
-            var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY");
+            var apiKey = Environment.GetEnvironmentVariable("SENDGRID_API_KEY")?.Trim();
 
             if (string.IsNullOrEmpty(apiKey))
                 throw new Exception("SendGrid API key not configured");
