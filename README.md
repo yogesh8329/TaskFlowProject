@@ -1,48 +1,133 @@
-# TaskFlow API
+# 🚀 TaskFlow API (ASP.NET Core Backend)
 
-## Overview
-TaskFlow API is a RESTful backend service built using ASP.NET Core 8.  
-It provides user authentication and task management functionality with structured architecture, validation, caching, and logging.
+A production-style backend API built using ASP.NET Core, implementing secure JWT authentication, user-based task management, and clean architecture principles.
 
----
-
-## Tech Stack
-
-- ASP.NET Core 8
-- Entity Framework Core
-- SQL Server
-- Redis (Caching)
-- JWT Authentication
-- FluentValidation
-- Clean layered architecture
+This project demonstrates real-world backend development practices including authentication, authorization, validation, rate limiting, and structured code organization.
 
 ---
 
-## Features
+## 🔥 Features
 
-- User Registration & Login
-- JWT-based Authentication
-- Role-based Authorization
-- Task CRUD operations
-- Pagination support
-- Soft Delete implementation
-- Global Exception Handling Middleware
-- Redis Caching
-- Logging
-- Password Reset via Email
+* 🔐 JWT Authentication (Register & Login)
+* 🧑 User-based Authorization (Protected APIs)
+* 📋 Task Management (Create, Fetch user-specific tasks)
+* ⚡ Rate Limiting (API protection)
+* 🛡️ Global Exception Handling (Middleware)
+* 🧪 Input Validation using FluentValidation
+* 🧱 Clean Architecture (Controllers → Services → Repositories)
+* 🧾 Structured Logging (Serilog)
 
 ---
 
-## Project Structure
+## 🛠️ Tech Stack
 
-- Controllers → Handle HTTP requests
-- Services → Business logic layer
-- Repositories → Data access abstraction
-- Infrastructure → Caching & shared utilities
-- Middleware → Exception & request logging
-- Validators → Input validation
-- Models & DTOs → Data transfer structure
+* ASP.NET Core Web API
+* Entity Framework Core
+* SQL Server
+* JWT (JSON Web Token)
+* FluentValidation
+* Serilog
 
-## How to Run
-Live demo(Backend)
-https://taskflowproject-a75e.onrender.com/swagger/index.html
+---
+
+## 📂 Project Structure
+
+* **Controllers** → Handle HTTP requests
+* **Services** → Business logic
+* **Repositories** → Data access layer
+* **Models** → Entities & DTOs
+* **Middleware** → Exception & logging
+* **Validators** → Request validation
+
+---
+
+## 🚀 How to Run Locally
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/TaskFlowProject.git
+```
+
+### 2. Navigate to project
+
+```bash
+cd TaskFlowProject
+```
+
+### 3. Configure settings
+
+Update `appsettings.Development.json`:
+
+* Add SQL Server connection string
+* Add JWT secret key
+
+Example:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=localhost;Database=TaskFlowDB;Trusted_Connection=True;TrustServerCertificate=True;"
+},
+"Jwt": {
+  "Key": "YOUR_SECRET_KEY",
+  "Issuer": "TaskFlow",
+  "Audience": "TaskFlowUsers"
+}
+```
+
+---
+
+### 4. Run the project
+
+```bash
+dotnet run
+```
+
+---
+
+### 5. Open Swagger UI
+
+```
+https://localhost:7077/swagger
+```
+
+---
+
+## 🔑 API Usage Flow
+
+1. Register a new user
+2. Login → Receive JWT token
+3. Click **Authorize** in Swagger
+4. Enter:
+
+```
+Bearer YOUR_TOKEN
+```
+
+5. Access protected APIs
+6. Create tasks
+7. Fetch user-specific tasks
+
+---
+
+## 📌 Example APIs
+
+* `POST /api/v1/Auth/register`
+* `POST /api/v1/Auth/login`
+* `GET /api/v1/Task/my`
+* `POST /api/v1/Task`
+
+---
+
+## ⚠️ Important Notes
+
+* Email functionality is mocked using `DummyEmailService`
+* This project is designed for local/demo purposes
+* No sensitive data is stored in the repository
+
+---
+
+## 👨‍💻 Author
+
+**Yogesh**
+ASP.NET Core Backend Developer
