@@ -32,16 +32,9 @@ builder.Services.AddHttpContextAccessor();
 
 // ================= DATABASE =================
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(
+    options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")
     ));
-
-
-// ================= REDIS =================
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = builder.Configuration.GetConnectionString("Redis");
-});
 
 
 // ================= RATE LIMITER =================
@@ -65,16 +58,7 @@ builder.Services.AddRateLimiter(options =>
 
 
 // ================= HEALTH CHECK =================
-builder.Services.AddHealthChecks()
-    .AddNpgSql(
-        builder.Configuration.GetConnectionString("DefaultConnection")!,
-        name: "postgres",
-        tags: new[] { "ready" });
-//.AddRedis(
-//    builder.Configuration.GetConnectionString("Redis")!,
-//    name: "redis",
-//    tags: new[] { "ready" });
-
+builder.Services.AddHealthChecks();
 
 
 // ================= DI =================
@@ -82,10 +66,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEmailService, DummyEmailService>();
 
 
-// ================= CONTROLLERS + JSON =================
+// ================= CONTROLLERS =================
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -93,19 +77,22 @@ builder.Services.AddControllers()
             new System.Text.Json.Serialization.JsonStringEnumConverter()
         );
     });
+
+
 // ================= CORS =================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.AllowAnyOrigin()   // Temporary (deployment तक)
+            policy.AllowAnyOrigin()
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         });
 });
 
-// ================= FLUENT VALIDATION =================
+
+// ================= VALIDATION =================
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 
@@ -125,13 +112,9 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "TaskFlow.Api",
+        Title = "TaskFlow API",
         Version = "v1"
     });
-    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
-    options.IncludeXmlComments(xmlPath);
-
 
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -182,17 +165,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // ================= BUILD APP =================
 var app = builder.Build();
 
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
+app.UseMiddleware<ExceptionMiddleware>(); // वापस enable
 
-
-app.UseMiddleware<ExceptionMiddleware>();
 app.UseCors("AllowFrontend");
 
 app.UseMiddleware<RequestLoggingMiddleware>();
@@ -202,15 +179,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
-app.MapHealthChecks("/health/live", new HealthCheckOptions
-{
-    Predicate = _ => false
-});
-
-app.MapHealthChecks("/health/ready", new HealthCheckOptions
-{
-    Predicate = check => check.Tags.Contains("ready")
-});
 app.MapGet("/", () => "TaskFlow API is running...");
 
 app.MapControllers();
